@@ -158,7 +158,7 @@ const Portfolio = () => {
           {portfolioSections.map((section) => (
             <div 
               key={section.id}
-              className="glass rounded-xl p-6 hover:glass-strong hover:scale-105 transition-all duration-normal group border border-glass-border/30 hover:border-primary/30"
+              className={`glass rounded-xl p-6 hover:glass-strong hover:scale-105 transition-all duration-normal group border border-glass-border/30 hover:border-primary/30 ${section.id === 'removal' ? 'md:col-span-2 md:justify-self-center md:max-w-xl' : ''}`}
             >
               {/* Header */}
               <div className="mb-6 space-y-3">

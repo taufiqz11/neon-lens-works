@@ -13,14 +13,19 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, alt, className = '' }: Bef
   const [isDragging, setIsDragging] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const frameRef = useRef<number | null>(null);
 
   const handleMove = (clientX: number) => {
     if (!containerRef.current) return;
-    
+
     const rect = containerRef.current.getBoundingClientRect();
     const position = ((clientX - rect.left) / rect.width) * 100;
     const clampedPosition = Math.min(Math.max(position, 0), 100);
-    setSliderPosition(clampedPosition);
+
+    if (frameRef.current) cancelAnimationFrame(frameRef.current);
+    frameRef.current = requestAnimationFrame(() => {
+      setSliderPosition(clampedPosition);
+    });
   };
 
   const handleMouseMove = useCallback((e: MouseEvent) => {
@@ -53,6 +58,7 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, alt, className = '' }: Bef
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('touchmove', handleTouchMove);
       document.removeEventListener('touchend', handleMouseUp);
+      if (frameRef.current) cancelAnimationFrame(frameRef.current);
     };
   }, [isDragging, handleMouseMove, handleTouchMove]);
 
@@ -67,11 +73,12 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, alt, className = '' }: Bef
   return (
     <div 
       ref={containerRef}
-      className={`relative w-full h-96 overflow-hidden rounded-xl glass border border-glass-border/30 cursor-grab active:cursor-grabbing ${className}`}
+      className={`relative w-full h-96 overflow-hidden rounded-xl glass border border-glass-border/30 cursor-grab active:cursor-grabbing select-none ${className}`}
       onMouseDown={(e) => {
         setIsDragging(true);
         handleMove(e.clientX);
       }}
+      onDragStart={(e) => e.preventDefault()}
       onTouchStart={(e) => {
         setIsDragging(true);
         if (e.touches[0]) {
@@ -85,31 +92,33 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, alt, className = '' }: Bef
         alt={`${alt} - Before`}
         className="absolute inset-0 w-full h-full object-cover"
         loading="lazy"
+        draggable={false}
       />
       
       {/* After Image with mask */}
       <div 
         className="absolute inset-0 overflow-hidden"
-        style={{ clipPath: `polygon(${sliderPosition}% 0%, 100% 0%, 100% 100%, ${sliderPosition}% 100%)` }}
+        style={{ clipPath: `polygon(${sliderPosition}% 0%, 100% 0%, 100% 100%, ${sliderPosition}% 100%)`, willChange: 'clip-path' }}
       >
         <img 
           src={afterImage} 
           alt={`${alt} - After`}
           className="absolute inset-0 w-full h-full object-cover"
           loading="lazy"
+          draggable={false}
         />
       </div>
 
       {/* Slider Line */}
       <div 
-        className="absolute top-0 bottom-0 w-0.5 bg-gradient-primary shadow-glow z-10"
+        className="absolute top-0 bottom-0 w-0.5 bg-glass-border/60 z-10"
         style={{ left: `${sliderPosition}%` }}
       />
 
       {/* Slider Handle */}
       <div 
         ref={sliderRef}
-        className="absolute top-1/2 w-12 h-12 -translate-y-1/2 -translate-x-1/2 glass rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform duration-normal z-20 border border-primary/30 hover:border-primary/60"
+        className="absolute top-1/2 w-12 h-12 -translate-y-1/2 -translate-x-1/2 glass rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing hover:scale-110 transition-transform duration-normal z-20 border border-glass-border/60 hover:border-glass-border/80"
         style={{ left: `${sliderPosition}%` }}
         tabIndex={0}
         onKeyDown={handleKeyDown}
@@ -119,7 +128,7 @@ const BeforeAfterSlider = ({ beforeImage, afterImage, alt, className = '' }: Bef
         aria-valuemax={100}
         aria-label="Before and after comparison slider"
       >
-        <ArrowsHorizontal size={20} className="text-primary" />
+        <ArrowsHorizontal size={20} className="text-foreground-secondary" />
       </div>
 
       {/* Labels */}
